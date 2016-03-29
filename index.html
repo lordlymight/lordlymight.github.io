@@ -24,20 +24,19 @@
 <img src="scar.png", id="seg11">
 <img src="scar.png", id="seg12">
 <img src="balls0.png", id="seg13">
-
-<textarea id="debug" cols="120">debug</textarea>
+<img src="balls1.png", id="seg14">
+<img src="balls2.png", id="seg15">
 
 
 <script language="javascript">
-var db = document.getElementById("debug")
 
 //configuration
-var numImages = 14;
+var numImages = 16;
 var snapshotsPerImage = 2;
 
 var relaxation = 0.1;
-var maxSpeed = 12;
-var fps = 2;
+var maxSpeed = 6;
+var fps = 60;
 
 //utility
 function mod(a, b)
@@ -88,34 +87,35 @@ for(i = 0; i < numImages; i++)
 function update()
 {
 	//update cursor history
+	var leftTarget = mouse.x;
+	var topTarget = mouse.y;
+
+	var deltaX = (leftTarget - cursorHistory[leadValue].x)*relaxation;
+	var deltaY = (topTarget - cursorHistory[leadValue].y)*relaxation;
+
+	//maximum speed constraint
+	speed2 = deltaX*deltaX + deltaY*deltaY
+	if(speed2 > maxSpeed*maxSpeed)
+	{
+		var factor = maxSpeed/Math.sqrt(speed2);
+		deltaX *= factor;
+		deltaY *= factor;
+	}
+
 	leadValue = (leadValue + 1) % histLength;
-	// document.write(leadValue + "     ");
-	cursorHistory[leadValue].x = mouse.x;
-	cursorHistory[leadValue].y = mouse.y;
+
+	cursorHistory[leadValue].x = cursorHistory[mod(leadValue - 1, histLength)].x + deltaX;
+	cursorHistory[leadValue].y = cursorHistory[mod(leadValue - 1, histLength)].y + deltaY;
+
+
 
 	//update image positions
-	db.innerHTML = "";
 	for(i = 0; i < numImages; i++)
 	{
 		var index = mod(leadValue - i*snapshotsPerImage, histLength);
-		var leftTarget = cursorHistory[index].x - images[i].clientWidth/2;
-		var topTarget = cursorHistory[index].y - images[i].clientHeight/2;
 
-		var deltaX = (leftTarget - parseInt(images[i].style.left))*relaxation;
-		var deltaY = (topTarget - parseInt(images[i].style.top))*relaxation;
-		db.innerHTML += deltaY + " | ";
-
-		//maximum speed constraint
-		speed2 = deltaX*deltaX + deltaY*deltaY
-		if(speed2 > maxSpeed*maxSpeed)
-		{
-			var factor = maxSpeed/Math.sqrt(speed2);
-			deltaX *= factor;
-			deltaY *= factor;
-		}
-
-		images[i].style.left = parseInt(images[i].style.left) + deltaX + 'px';
-		images[i].style.top = parseInt(images[i].style.top) + deltaY + 'px';
+		images[i].style.left = cursorHistory[index].x - images[i].clientWidth/2 + 'px';
+		images[i].style.top = cursorHistory[index].y - images[i].clientHeight/2 + 'px';
 	}
 }
 
